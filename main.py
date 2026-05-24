@@ -21,8 +21,10 @@ async def upload_csv(file: UploadFile = File(...)):
         df["cost_price"] +
         df["commission"] +
         df["logistics"] +
-        df["ads"]
-    )
+        df["storage"] +
+        df["return_cost"] +
+        df["ads_spend"]
+)
 
     df["profit"] = df["revenue"] - df["cost"]
 
