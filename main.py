@@ -1,9 +1,8 @@
-import os
 from fastapi import FastAPI, UploadFile, File
-from app.csv_parser import parse_csv
-from app.calculator import calculate_metrics
+import pandas as pd
+from io import StringIO
 
-app = FastAPI(title="Marketplace MVP")
+app = FastAPI()
 
 
 @app.get("/")
@@ -13,6 +12,28 @@ def home():
 
 @app.post("/upload-csv")
 async def upload_csv(file: UploadFile = File(...)):
-    df = await parse_csv(file)
-    result = calculate_metrics(df)
-    return result
+    content = await file.read()
+    df = pd.read_csv(StringIO(content.decode("utf-8")))
+
+    df["revenue"] = df["quantity"] * df["sale_price"]
+
+    df["cost"] = (
+        df["cost_price"] +
+        df["commission"] +
+        df["logistics"] +
+        df["ads"]
+    )
+
+    df["profit"] = df["revenue"] - df["cost"]
+
+    grouped = df.groupby("sku").agg({
+        "revenue": "sum",
+        "profit": "sum"
+    }).reset_index()
+
+    return {
+        "summary": {
+            "total_profit": float(grouped["profit"].sum())
+        },
+        "products": grouped.to_dict(orient="records")
+    }
