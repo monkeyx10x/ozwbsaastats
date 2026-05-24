@@ -1,8 +1,14 @@
+import os
 from fastapi import FastAPI, UploadFile, File
 from app.csv_parser import parse_csv
 from app.calculator import calculate_metrics
 
-app = FastAPI(title="Marketplace Profit SaaS MVP")
+app = FastAPI(title="Marketplace MVP")
+
+
+@app.get("/")
+def home():
+    return {"status": "ok"}
 
 
 @app.post("/upload-csv")
