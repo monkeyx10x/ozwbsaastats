@@ -85,4 +85,128 @@ if uploaded_file:
             "🔴 Total Loss",
             f"{summary['total_loss']:,.0f} ₽"
         )
+
+    st.divider()
+
+    # =========================
+    # ALERTS
+    # =========================
+
+    if summary["total_loss"] < 0:
+
+        st.error(
+            f"⚠ You are losing "
+            f"{abs(summary['total_loss']):,.0f} ₽ "
+            f"on unprofitable products"
+        )
+
+    else:
+        st.success("✅ No critical losses detected")
+
+    # =========================
+    # INSIGHTS
+    # =========================
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.subheader("🔥 Best Products")
+
+        best_df = pd.DataFrame(
+            insights["best_skus"]
+        )
+
+        st.dataframe(best_df)
+
+    with col2:
+
+        st.subheader("⚠ Worst Products")
+
+        worst_df = pd.DataFrame(
+            insights["worst_skus"]
+        )
+
+        st.dataframe(worst_df)
+
+    st.divider()
+
+    # =========================
+    # ACTIONS
+    # =========================
+
+    st.subheader("🧠 Recommended Actions")
+
+    for action in actions:
+        st.warning(action)
+
+    st.divider()
+
+    # =========================
+    # PRODUCT TABLE
+    # =========================
+
+    st.subheader("📦 Product Analytics")
+
+    def color_status(val):
+
+        if val == "CRITICAL":
+            return "background-color: #ff0000"
+
+        elif val == "LOSS":
+            return "background-color: #ff4b4b"
+
+        elif val == "WARNING":
+            return "background-color: #ffa500"
+
+        elif val == "TOP":
+            return "background-color: #00cc66"
+
+        return ""
+
+    styled_df = df.style.map(
+        color_status,
+        subset=["status"]
+    )
+
+    st.dataframe(
+        styled_df,
+        use_container_width=True
+    )
+
+    st.divider()
+
+    # =========================
+    # CHARTS
+    # =========================
+
+    st.subheader("📈 Profit by SKU")
+
+    fig = px.bar(
+        df,
+        x="sku",
+        y="profit",
+        color="status",
+        text="profit"
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    st.subheader("📊 Revenue vs Profit")
+
+    fig2 = px.scatter(
+        df,
+        x="revenue",
+        y="profit",
+        color="status",
+        size="revenue",
+        hover_data=["sku"]
+    )
+
+    st.plotly_chart(
+        fig2,
+        use_container_width=True
     )
