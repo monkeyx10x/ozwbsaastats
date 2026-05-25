@@ -3,30 +3,18 @@ import requests
 import pandas as pd
 import plotly.express as px
 
-# =========================
-# CONFIG
-# =========================
-
-API_URL = "https://ozwbsaastats.onrender.com/upload-csv"
+API_URL = "https://YOUR-RENDER-URL.onrender.com/upload-csv"
 
 st.set_page_config(
     page_title="Marketplace SaaS",
     layout="wide"
 )
 
-# =========================
-# TITLE
-# =========================
-
 st.title("📊 Marketplace Profit Dashboard")
 
 st.markdown(
     "Upload WB/Ozon CSV and detect profit leaks instantly."
 )
-
-# =========================
-# FILE UPLOAD
-# =========================
 
 uploaded_file = st.file_uploader(
     "Upload marketplace CSV",
@@ -52,6 +40,10 @@ if uploaded_file:
 
     data = response.json()
 
+    if "error" in data:
+        st.error(data["error"])
+        st.stop()
+
     summary = data["summary"]
     insights = data["insights"]
     actions = data["actions"]
@@ -62,7 +54,7 @@ if uploaded_file:
     # KPI CARDS
     # =========================
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
 
     with col1:
         st.metric(
@@ -79,133 +71,18 @@ if uploaded_file:
     with col3:
         st.metric(
             "📊 Avg Margin",
-            f"{summary['avg_margin']} %"
+            f"{summary['avg_margin']:.1f}%"
         )
 
     with col4:
         st.metric(
+            "🚀 Avg ROI",
+            f"{summary['avg_roi']:.1f}%"
+        )
+
+    with col5:
+        st.metric(
             "🔴 Total Loss",
             f"{summary['total_loss']:,.0f} ₽"
         )
-
-    st.divider()
-
-    # =========================
-    # ALERTS
-    # =========================
-
-    if summary["total_loss"] < 0:
-
-        st.error(
-            f"⚠ You are losing "
-            f"{abs(summary['total_loss']):,.0f} ₽ "
-            f"on unprofitable products"
-        )
-
-    else:
-        st.success("✅ No critical losses detected")
-
-    # =========================
-    # INSIGHTS
-    # =========================
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-
-        st.subheader("🔥 Best Products")
-
-        best_df = pd.DataFrame(
-            insights["best_skus"]
-        )
-
-        st.dataframe(best_df)
-
-    with col2:
-
-        st.subheader("⚠ Worst Products")
-
-        worst_df = pd.DataFrame(
-            insights["worst_skus"]
-        )
-
-        st.dataframe(worst_df)
-
-    st.divider()
-
-    # =========================
-    # ACTIONS
-    # =========================
-
-    st.subheader("🧠 Recommended Actions")
-
-    for action in actions:
-        st.warning(action)
-
-    st.divider()
-
-    # =========================
-    # PRODUCT TABLE
-    # =========================
-
-    st.subheader("📦 Product Analytics")
-
-    def color_status(val):
-
-        if val == "LOSS":
-            return "background-color: #ff4b4b"
-
-        elif val == "WARNING":
-            return "background-color: #ffa500"
-
-        elif val == "PROFIT":
-            return "background-color: #00cc66"
-
-        return ""
-
-    styled_df = df.style.map(
-        color_status,
-        subset=["status"]
-    )
-
-    st.dataframe(
-        styled_df,
-        use_container_width=True
-    )
-
-    st.divider()
-
-    # =========================
-    # CHARTS
-    # =========================
-
-    st.subheader("📈 Profit by SKU")
-
-    fig = px.bar(
-        df,
-        x="sku",
-        y="profit",
-        color="status",
-        text="profit"
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
-    st.subheader("📊 Revenue vs Profit")
-
-    fig2 = px.scatter(
-        df,
-        x="revenue",
-        y="profit",
-        color="status",
-        size="revenue",
-        hover_data=["sku"]
-    )
-
-    st.plotly_chart(
-        fig2,
-        use_container_width=True
     )
