@@ -1,0 +1,11 @@
+date,marketplace,order_id,sku,product_name,quantity,sale_price,cost_price,discount,commission,logistics,storage,return_cost,ads_spend
+2026-01-01,WB,1001,A1,Phone Case,2,1000,600,50,120,50,10,0,80
+2026-01-01,WB,1002,A1,Phone Case,1,1000,600,50,120,50,10,0,80
+2026-01-02,WB,1003,B2,Headphones,1,3000,2400,100,300,120,20,50,500
+2026-01-02,Ozon,2001,C3,Charger,3,500,250,0,50,30,5,0,40
+2026-01-03,Ozon,2002,D4,USB Cable,5,300,100,0,20,10,2,0,15
+2026-01-03,WB,1004,E5,Smart Watch,1,5000,4200,200,500,200,30,0,900
+2026-01-04,Ozon,2003,F6,Keyboard,2,2500,1800,0,250,100,15,0,300
+2026-01-04,WB,1005,G7,Mouse,4,1200,700,50,100,40,8,0,120
+2026-01-05,Ozon,2004,H8,Laptop Stand,2,1800,1000,0,180,70,10,0,60
+2026-01-05,WB,1006,I9,Power Bank,1,3500,2800,100,350,150,20,100,700
