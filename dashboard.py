@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 import plotly.express as px
 
-API_URL = "https://YOUR-RENDER-URL.onrender.com/upload-csv"
+API_URL = "https://ozwbsaastats-1.onrender.com/upload-csv"
 
 st.set_page_config(
     page_title="Marketplace SaaS",
