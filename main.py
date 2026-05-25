@@ -116,27 +116,27 @@ async def upload_csv(file: UploadFile = File(...)):
 
     return {
 
-        "summary": {
-            "total_revenue": total_revenue,
-            "total_profit": total_profit,
-            "avg_margin": avg_margin,
-            "total_loss": total_loss
-        },
+    "summary": {
+        "total_revenue": float(total_revenue),
+        "total_profit": float(total_profit),
+        "avg_margin": float(avg_margin),
+        "total_loss": float(total_loss)
+    },
 
-        "insights": {
+    "insights": {
 
-            "worst_skus": worst_products[
-                ["sku", "profit"]
-            ].to_dict(orient="records"),
+        "best_skus": best[
+            ["sku", "profit"]
+        ].astype(object).to_dict(orient="records"),
 
-            "best_skus": best_products[
-                ["sku", "profit"]
-            ].to_dict(orient="records")
-        },
+        "worst_skus": worst[
+            ["sku", "profit"]
+        ].astype(object).to_dict(orient="records")
+    },
 
-        "actions": actions,
+    "actions": actions,
 
-        "products": grouped.to_dict(
-            orient="records"
-        )
-    }
+    "products": grouped.astype(object).to_dict(
+        orient="records"
+    )
+}
