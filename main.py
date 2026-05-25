@@ -1,4 +1,157 @@
 from fastapi import FastAPI, UploadFile, File
+import pandas as pd
+from io import StringIO
+
+app = FastAPI(
+    title="Marketplace SaaS",
+    version="1.0.0"
+)
+
+
+@app.get("/")
+def home():
+    return {
+        "status": "ok",
+        "service": "Marketplace SaaS"
+    }
+
+
+@app.post("/upload-csv")
+async def upload_csv(file: UploadFile = File(...)):
+
+    try:
+
+        # =========================
+        # READ CSV
+        # =========================
+
+        content = await file.read()
+
+        df = pd.read_csv(
+            StringIO(content.decode("utf-8"))
+        )
+
+        # =========================
+        # VALIDATION
+        # =========================
+
+        required_columns = [
+            "quantity",
+            "sale_price",
+            "cost_price",
+            "commission",
+            "logistics",
+            "storage",
+            "return_cost",
+            "ads_spend",
+            "sku"
+        ]
+
+        missing_columns = [
+            col for col in required_columns
+            if col not in df.columns
+        ]
+
+        if missing_columns:
+            return {
+                "error": f"Missing columns: {missing_columns}"
+            }
+
+        # =========================
+        # BUSINESS CALCULATIONS
+        # =========================
+
+        df["revenue"] = (
+            df["quantity"] * df["sale_price"]
+        )
+
+        df["cost"] = (
+            df["cost_price"] +
+            df["commission"] +
+            df["logistics"] +
+            df["storage"] +
+            df["return_cost"] +
+            df["ads_spend"]
+        )
+
+        df["profit"] = (
+            df["revenue"] - df["cost"]
+        )
+
+        df["margin"] = (
+            (df["profit"] / df["revenue"]) * 100
+        ).fillna(0).round(2)
+
+        df["roi"] = (
+            (df["profit"] / df["cost"]) * 100
+        ).fillna(0).round(2)
+
+        # =========================
+        # GROUPING
+        # =========================
+
+        grouped = df.groupby("sku").agg({
+            "revenue": "sum",
+            "profit": "sum",
+            "margin": "mean",
+            "roi": "mean",
+            "ads_spend": "sum"
+        }).reset_index()
+
+        # =========================
+        # CLEAN TYPES
+        # =========================
+
+        grouped["revenue"] = grouped["revenue"].apply(float)
+        grouped["profit"] = grouped["profit"].apply(float)
+        grouped["margin"] = grouped["margin"].apply(float)
+        grouped["roi"] = grouped["roi"].apply(float)
+        grouped["ads_spend"] = grouped["ads_spend"].apply(float)
+
+        # =========================
+        # STATUS ENGINE
+        # =========================
+
+        def get_status(profit, margin):
+
+            if profit < -500:
+                return "CRITICAL"
+
+            elif profit < 0:
+                return "LOSS"
+
+            elif margin < 15:
+                return "WARNING"
+
+            elif margin > 40:
+                return "TOP"
+
+            return "GOOD"
+
+        grouped["status"] = grouped.apply(
+            lambda row: get_status(
+                row["profit"],
+                row["margin"]
+            ),
+            axis=1
+        )
+
+        # =========================
+        # SUMMARY
+        # =========================
+
+        total_revenue = float(
+            grouped["revenue"].sum()
+        )
+
+        total_profit = float(
+            grouped["profit"].sum()
+        )
+
+        avg_margin = float(
+            grouped["margin"].mean()
+        )
+
         avg_roi = float(
             grouped["roi"].mean()
         )
