@@ -1,142 +1,82 @@
 from fastapi import FastAPI, UploadFile, File
-import pandas as pd
-from io import StringIO
+        avg_roi = float(
+            grouped["roi"].mean()
+        )
 
-app = FastAPI()
+        total_loss = float(
+            grouped[grouped["profit"] < 0]["profit"].sum()
+        )
 
+        # =========================
+        # INSIGHTS
+        # =========================
 
-@app.get("/")
-def home():
-    return {"status": "ok"}
+        best = grouped.sort_values(
+            by="profit",
+            ascending=False
+        ).head(3)
 
+        worst = grouped.sort_values(
+            by="profit"
+        ).head(3)
 
-@app.post("/upload-csv")
-async def upload_csv(file: UploadFile = File(...)):
-    content = await file.read()
+        # =========================
+        # ACTION ENGINE
+        # =========================
 
-    df = pd.read_csv(StringIO(content.decode("utf-8")))
+        actions = []
 
-    # =========================
-    # BUSINESS CALCULATIONS
-    # =========================
+        for _, row in grouped.iterrows():
 
-    df["revenue"] = df["quantity"] * df["sale_price"]
+            if row["profit"] < 0:
+                actions.append(
+                    f"Reduce ads or increase price for SKU {row['sku']}"
+                )
 
-    df["cost"] = (
-        df["cost_price"] +
-        df["commission"] +
-        df["logistics"] +
-        df["storage"] +
-        df["return_cost"] +
-        df["ads_spend"]
-    )
+            elif row["margin"] < 15:
+                actions.append(
+                    f"Optimize logistics or commission for SKU {row['sku']}"
+                )
 
-    df["profit"] = df["revenue"] - df["cost"]
+            elif row["margin"] > 40:
+                actions.append(
+                    f"Scale SKU {row['sku']} with more ads"
+                )
 
-    df["margin"] = (
-        df["profit"] / df["revenue"] * 100
-    ).round(2)
+        # =========================
+        # RESPONSE
+        # =========================
 
-    # =========================
-    # GROUP BY SKU
-    # =========================
+        return {
 
-    grouped = df.groupby("sku").agg({
-        "revenue": "sum",
-        "profit": "sum",
-        "margin": "mean",
-        "ads_spend": "sum"
-    }).reset_index()
+            "summary": {
+                "total_revenue": total_revenue,
+                "total_profit": total_profit,
+                "avg_margin": avg_margin,
+                "avg_roi": avg_roi,
+                "total_loss": total_loss
+            },
 
-    # =========================
-    # STATUS ENGINE
-    # =========================
+            "insights": {
 
-    def get_status(profit, margin):
-        if profit < 0:
-            return "LOSS"
-        elif margin < 15:
-            return "WARNING"
-        return "PROFIT"
+                "best_skus": best[
+                    ["sku", "profit"]
+                ].astype(object).to_dict(orient="records"),
 
-    grouped["status"] = grouped.apply(
-        lambda row: get_status(row["profit"], row["margin"]),
-        axis=1
-    )
+                "worst_skus": worst[
+                    ["sku", "profit"]
+                ].astype(object).to_dict(orient="records")
+            },
 
-    # =========================
-    # SUMMARY
-    # =========================
+            "actions": actions,
 
-    total_revenue = round(grouped["revenue"].sum(), 2)
-    total_profit = round(grouped["profit"].sum(), 2)
-
-    avg_margin = round(
-        grouped["margin"].mean(), 2
-    )
-
-    total_loss = round(
-        grouped[grouped["profit"] < 0]["profit"].sum(), 2
-    )
-
-    # =========================
-    # INSIGHTS ENGINE
-    # =========================
-
-    worst_products = grouped.sort_values(
-        by="profit"
-    ).head(3)
-
-    best_products = grouped.sort_values(
-        by="profit",
-        ascending=False
-    ).head(3)
-
-    # =========================
-    # ACTION ENGINE
-    # =========================
-
-    actions = []
-
-    for _, row in grouped.iterrows():
-
-        if row["profit"] < 0:
-            actions.append(
-                f"Reduce ads or increase price for SKU {row['sku']}"
+            "products": grouped.astype(object).to_dict(
+                orient="records"
             )
+        }
 
-        elif row["margin"] < 15:
-            actions.append(
-                f"Optimize logistics or commission for SKU {row['sku']}"
-            )
+    except Exception as e:
 
-    # =========================
-    # RESPONSE
-    # =========================
-
-    return {
-
-    "summary": {
-        "total_revenue": float(total_revenue),
-        "total_profit": float(total_profit),
-        "avg_margin": float(avg_margin),
-        "total_loss": float(total_loss)
-    },
-
-    "insights": {
-
-        "best_skus": best[
-            ["sku", "profit"]
-        ].astype(object).to_dict(orient="records"),
-
-        "worst_skus": worst[
-            ["sku", "profit"]
-        ].astype(object).to_dict(orient="records")
-    },
-
-    "actions": actions,
-
-    "products": grouped.astype(object).to_dict(
-        orient="records"
-    )
-}
+        return {
+            "error": str(e)
+        }
