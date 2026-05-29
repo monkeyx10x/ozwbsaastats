@@ -189,24 +189,24 @@ async def upload_csv(file: UploadFile = File(...)):
         actions = []
 
         for _, row in grouped.iterrows():
-
-        if row["profit"] < 0:
-    
-            actions.append(
-                f"SKU {row['sku']} is losing money. Consider reducing ads spend or increasing product price."
-            )
-    
-        elif row["margin"] < 15:
-    
-            actions.append(
-                f"SKU {row['sku']} has weak margin ({row['margin']}%). Optimize logistics or commission."
-            )
-    
-        elif row["profit"] > 3000:
-    
-            actions.append(
-                f"SKU {row['sku']} performs extremely well. Consider scaling ads budget."
-        )
+        
+            if row["profit"] < 0:
+        
+                actions.append(
+                    f"SKU {row['sku']} is losing money. Consider reducing ads spend or increasing product price."
+                )
+        
+            elif row["margin"] < 15:
+        
+                actions.append(
+                    f"SKU {row['sku']} has weak margin ({row['margin']}%). Optimize logistics or commission."
+                )
+        
+            elif row["profit"] > 3000:
+        
+                actions.append(
+                    f"SKU {row['sku']} performs extremely well. Consider scaling ads budget."
+                )
 
         # =========================
         # RESPONSE
