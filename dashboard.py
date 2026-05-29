@@ -24,7 +24,11 @@ uploaded_file = st.file_uploader(
 if uploaded_file:
 
     files = {
-        "file": uploaded_file.getvalue()
+    "file": (
+        uploaded_file.name,
+        uploaded_file,
+        "text/csv"
+        )
     }
 
     with st.spinner("Analyzing data..."):
