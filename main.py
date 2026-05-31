@@ -73,7 +73,7 @@ async def upload_csv(
     # ======================
 
     if not is_pro and data.get("uploads_used", 0) >= 5:
-    return {"error": "Free limit reached"}
+        return {"error": "Free limit reached"}
 
         # =========================
         # READ CSV
