@@ -251,7 +251,13 @@ async def upload_csv(file: UploadFile = File(...)):
             )
         }
 
-        @app.post("/create-payment")
+    except Exception as e:
+
+        return {
+            "error": str(e)
+        }
+
+@app.post("/create-payment")
         
         async def create_payment():
         
@@ -284,9 +290,3 @@ async def upload_csv(file: UploadFile = File(...)):
                 payment.confirmation.confirmation_url
         
             }
-
-    except Exception as e:
-
-        return {
-            "error": str(e)
-        }
