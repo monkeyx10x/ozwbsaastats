@@ -6,3 +6,4 @@ streamlit
 requests
 plotly
 yookassa
+supabase
