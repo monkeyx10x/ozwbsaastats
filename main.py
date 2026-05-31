@@ -73,9 +73,7 @@ async def upload_csv(
     # ======================
 
     if not is_pro and data.get("uploads_used", 0) >= 5:
-        return {
-            "error": "Free limit reached"
-        }
+    return {"error": "Free limit reached"}
 
         # =========================
         # READ CSV
@@ -254,6 +252,15 @@ async def upload_csv(
                 actions.append(
                     f"SKU {row['sku']} performs extremely well. Consider scaling ads budget."
                 )
+
+        # =========================
+        # UPDATE USAGE
+        # =========================
+        
+        if user_id:
+            supabase.table("profiles").update({
+                "uploads_used": data.get("uploads_used", 0) + 1
+            }).eq("id", user_id).execute()
 
         # =========================
         # RESPONSE
