@@ -259,34 +259,34 @@ async def upload_csv(file: UploadFile = File(...)):
 
 @app.post("/create-payment")
         
-        async def create_payment():
-        
-            payment = Payment.create({
-        
-                "amount": {
-                    "value": "990.00",
-                    "currency": "RUB"
-                },
-        
-                "confirmation": {
-        
-                    "type": "redirect",
-        
-                    "return_url":
-                    "http://localhost:3000/success"
-        
-                },
-        
-                "capture": True,
-        
-                "description":
-                "Seller Pulse PRO Subscription"
-        
-            }, uuid.uuid4())
-        
-            return {
-        
-                "payment_url":
-                payment.confirmation.confirmation_url
-        
-            }
+async def create_payment():
+
+    payment = Payment.create({
+
+        "amount": {
+            "value": "990.00",
+            "currency": "RUB"
+        },
+
+        "confirmation": {
+
+            "type": "redirect",
+
+            "return_url":
+            "http://localhost:3000/success"
+
+        },
+
+        "capture": True,
+
+        "description":
+        "Seller Pulse PRO Subscription"
+
+    }, uuid.uuid4())
+
+    return {
+
+        "payment_url":
+        payment.confirmation.confirmation_url
+
+    }
