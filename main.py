@@ -49,13 +49,13 @@ async def upload_csv(
         os.getenv("SUPABASE_URL"),
         os.getenv("SUPABASE_SERVICE_ROLE_KEY")
     )
-
+    
     profile = supabase.table("profiles") \
         .select("*") \
         .eq("id", user_id) \
         .single() \
         .execute()
-
+    
     data = profile.data
 
     # ======================
@@ -258,13 +258,13 @@ async def upload_csv(
         # =========================
         # RESPONSE
         # =========================
-
-        if user_id:
-        supabase.table("profiles").update({
-            "uploads_used": data.get("uploads_used", 0) + 1
-        }).eq("id", user_id).execute()
         
         return {
+
+            if user_id:
+            supabase.table("profiles").update({
+                "uploads_used": data.get("uploads_used", 0) + 1
+            }).eq("id", user_id).execute()
 
             "summary": {
                 "total_revenue": total_revenue,
