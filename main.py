@@ -2,10 +2,21 @@ from fastapi import FastAPI, UploadFile, File
 import pandas as pd
 from io import StringIO
 from fastapi.middleware.cors import CORSMiddleware
+import os
+import uuid
+from yookassa import Configuration, Payment
 
 app = FastAPI(
     title="Marketplace SaaS",
     version="1.0.0"
+)
+
+Configuration.account_id = os.getenv(
+    "YOOKASSA_SHOP_ID"
+)
+
+Configuration.secret_key = os.getenv(
+    "YOOKASSA_SECRET_KEY"
 )
 
 app.add_middleware(
@@ -239,6 +250,41 @@ async def upload_csv(file: UploadFile = File(...)):
                 orient="records"
             )
         }
+
+        python id="l9lmfx"
+        @app.post("/create-payment")
+        
+        async def create_payment():
+        
+            payment = Payment.create({
+        
+                "amount": {
+                    "value": "990.00",
+                    "currency": "RUB"
+                },
+        
+                "confirmation": {
+        
+                    "type": "redirect",
+        
+                    "return_url":
+                    "http://localhost:3000/success"
+        
+                },
+        
+                "capture": True,
+        
+                "description":
+                "Seller Pulse PRO Subscription"
+        
+            }, uuid.uuid4())
+        
+            return {
+        
+                "payment_url":
+                payment.confirmation.confirmation_url
+        
+            }
 
     except Exception as e:
 
