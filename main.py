@@ -214,6 +214,23 @@ async def upload_csv(
             grouped[grouped["profit"] < 0]["profit"].sum()
         )
 
+        supabase.table("reports").insert({
+            "user_id": user_id,
+            "summary": {
+                "total_revenue": total_revenue,
+                "total_profit": total_profit,
+                "avg_margin": avg_margin,
+                "avg_roi": avg_roi,
+                "total_loss": total_loss
+            },
+            "report_json": {
+                "best": best.to_dict(orient="records"),
+                "worst": worst.to_dict(orient="records"),
+                "products": grouped.to_dict(orient="records"),
+                "actions": actions
+            }
+        }).execute()
+
         # =========================
         # INSIGHTS
         # =========================
@@ -362,3 +379,35 @@ async def yookassa_webhook(request: Request):
     }).eq("id", user_id).execute()
 
     return {"status": "pro_activated"}
+
+@app.get("/profile/{user_id}")
+async def get_profile(user_id: str):
+
+    supabase = create_client(
+        os.getenv("SUPABASE_URL"),
+        os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    )
+
+    profile = supabase.table("profiles") \
+        .select("*") \
+        .eq("id", user_id) \
+        .single() \
+        .execute()
+
+    payments = supabase.table("payments") \
+        .select("*") \
+        .eq("user_id", user_id) \
+        .order("created_at", desc=True) \
+        .execute()
+
+    reports = supabase.table("reports") \
+        .select("*") \
+        .eq("user_id", user_id) \
+        .order("created_at", desc=True) \
+        .execute()
+
+    return {
+        "profile": profile.data,
+        "payments": payments.data,
+        "reports": reports.data
+    }
