@@ -5,6 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 import uuid
 from yookassa import Configuration, Payment
+from supabase import create_client
+from fastapi import Request
+from datetime import datetime, timedelta
+import json
 
 app = FastAPI(
     title="Marketplace SaaS",
@@ -35,11 +39,43 @@ def home():
         "service": "Marketplace SaaS"
     }
 
-
 @app.post("/upload-csv")
-async def upload_csv(file: UploadFile = File(...)):
+async def upload_csv(
+    file: UploadFile = File(...),
+    user_id: str = None
+):
 
-    try:
+    supabase = create_client(
+        os.getenv("SUPABASE_URL"),
+        os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    )
+
+    profile = supabase.table("profiles") \
+        .select("*") \
+        .eq("id", user_id) \
+        .single() \
+        .execute()
+
+    data = profile.data
+
+    # ======================
+    # PRO CHECK
+    # ======================
+
+    is_pro = (
+        data.get("plan") == "pro"
+        and data.get("pro_until")
+        and datetime.fromisoformat(data["pro_until"]) > datetime.utcnow()
+    )
+
+    # ======================
+    # LIMIT CHECK
+    # ======================
+
+    if not is_pro and data.get("uploads_used", 0) >= 5:
+        return {
+            "error": "Free limit reached"
+        }
 
         # =========================
         # READ CSV
@@ -223,6 +259,11 @@ async def upload_csv(file: UploadFile = File(...)):
         # RESPONSE
         # =========================
 
+        if user_id:
+        supabase.table("profiles").update({
+            "uploads_used": data.get("uploads_used", 0) + 1
+        }).eq("id", user_id).execute()
+        
         return {
 
             "summary": {
@@ -258,35 +299,59 @@ async def upload_csv(file: UploadFile = File(...)):
         }
 
 @app.post("/create-payment")
-        
-async def create_payment():
+async def create_payment(payload: dict):
+
+    user_id = payload.get("user_id")
 
     payment = Payment.create({
-
         "amount": {
             "value": "990.00",
             "currency": "RUB"
         },
 
-        "confirmation": {
-
-            "type": "redirect",
-
-            "return_url":
-            "http://localhost:3000/success"
-
-        },
-
         "capture": True,
 
-        "description":
-        "Seller Pulse PRO Subscription"
+        "confirmation": {
+            "type": "redirect",
+            "return_url": "http://localhost:3000/success"
+        },
+
+        "description": "Seller Pulse PRO",
+
+        "metadata": {
+            "user_id": user_id
+        }
 
     }, uuid.uuid4())
 
     return {
-
-        "payment_url":
-        payment.confirmation.confirmation_url
-
+        "payment_url": payment.confirmation.confirmation_url
     }
+
+@app.post("/yookassa-webhook")
+async def yookassa_webhook(request: Request):
+
+    event = await request.json()
+
+    if event.get("event") != "payment.succeeded":
+        return {"ok": True}
+
+    payment = event["object"]
+    user_id = payment.get("metadata", {}).get("user_id")
+
+    if not user_id:
+        return {"error": "no user_id"}
+
+    pro_until = datetime.utcnow() + timedelta(days=30)
+
+    supabase = create_client(
+        os.getenv("SUPABASE_URL"),
+        os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    )
+
+    supabase.table("profiles").update({
+        "plan": "pro",
+        "pro_until": pro_until.isoformat()
+    }).eq("id", user_id).execute()
+
+    return {"status": "pro_activated"}
