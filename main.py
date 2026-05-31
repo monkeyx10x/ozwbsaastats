@@ -251,7 +251,6 @@ async def upload_csv(file: UploadFile = File(...)):
             )
         }
 
-        python id="l9lmfx"
         @app.post("/create-payment")
         
         async def create_payment():
